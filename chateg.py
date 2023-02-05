@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 OPTION, START_TIME, DURATION, NOZZLE, NOZZLE, STATUS  = range(6)
 
-starttime = datetime.datetime.now()
+start_time = datetime.datetime.now()
 nozzle_size = 0.8
 
 option_keyboard = [["Add current printing data", "Check status of printer"]]
@@ -58,6 +58,8 @@ option_keyboard = [["Add current printing data", "Check status of printer"]]
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Asks if the user need an update or a status check"""
     logger.info("Bot started, asking for option")
+    user = update.message.from_user
+    logger.info("Username: %s", user.first_name)
     reply_keyboard = [["Add current printing data", "Check status of printer"]]
     await update.message.reply_text(
         f"Welcome to RIG PrinterBot 1.0 🤖🎨 \n\nDo you need to add current printing details, or check printer status. \n\nChoose from the following.",
@@ -74,7 +76,7 @@ async def starttime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     start_time = datetime.datetime.now()
     logger.info("Start time: %s", start_time)
     await update.message.reply_text(
-        f'Printing start time have been recorded as: {start_time.strftime(r"%I:%M %p - %b %d")}. \n \nEnter the expected duration of printing in HH,MM format',
+        f'Printing start time have been recorded as: {start_time.strftime(r"%I:%M %p - %b %d")}. \n \nEnter the expected duration of printing in HH.MM format',
     )
 
     return DURATION
@@ -82,11 +84,12 @@ async def starttime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def duration(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Stores the info about the printing duration and asks nozzle size"""
-    user = update.message.from_user
-    logger.info("Duration of printing of %s: %s", user.first_name, update.message.text)
+    print_duration = update.message.text
+    finish_time = start_time + datetime.timedelta(hours=int(print_duration.split('.')[0]), minutes=int(print_duration.split('.')[1]))
+    logger.info("Duration of printing: %s", print_duration)
     reply_keyboard = [["0.2", "0.3", "0.4", "0.8"]]
     await update.message.reply_text(
-        f"Which nozzle are you using",
+        f"Printing is expected to finish at {finish_time.strftime(r'%I:%M %p - %b %d')}. \n\nWhich nozzle are you using",
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard, one_time_keyboard=True, input_field_placeholder="Nozzle?"
          ),
@@ -97,7 +100,7 @@ async def nozzle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """saves nozzle and goodbye"""
     logger.info("Nozzle is %s", update.message.text)
     await update.message.reply_text(
-        "Happy printing"
+        "Thanks for updating. \n\nHappy printing 🫶🏻"
     )
     return ConversationHandler.END
 
@@ -105,7 +108,7 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """shows status and goodbye"""
     logger.info("Status is: %s", update.message.text)
     await update.message.reply_text(
-        "Happy printing"
+        "See you again"
     )
     return ConversationHandler.END
 
