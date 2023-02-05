@@ -14,6 +14,8 @@ Press Ctrl-C on the command line or send a signal to the process to stop the
 bot.
 """
 
+option_keyboard = [["Update Print Info 🎨", "Check Printer Status 🔍"]]
+
 import logging
 import datetime
 import sqlite3
@@ -49,11 +51,11 @@ logger = logging.getLogger(__name__)
 
 OPTION, START_TIME, DURATION, NOZZLE, NOZZLE, STATUS  = range(6)
 
+global start_time
+global end_time
 start_time = datetime.datetime.now()
+end_time = datetime.datetime.now()
 nozzle_size = 0.8
-
-option_keyboard = [["Update Print Info 🎨", "Check Printer Status 🔍"]]
-
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Asks if the user need an update or a status check"""
@@ -85,11 +87,11 @@ async def starttime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def duration(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Stores the info about the printing duration and asks nozzle size"""
     print_duration = update.message.text
-    finish_time = start_time + datetime.timedelta(hours=int(print_duration.split('.')[0]), minutes=int(print_duration.split('.')[1]))
+    end_time = start_time + datetime.timedelta(hours=int(print_duration.split('.')[0]), minutes=int(print_duration.split('.')[1]))
     logger.info("Duration of printing: %s", print_duration)
     reply_keyboard = [["0.2", "0.3", "0.4", "0.8"]]
     await update.message.reply_text(
-        f"The printing is expected to be completed at {finish_time.strftime(r'%I:%M %p - %b %d')}. \n\nKindly specify which nozzle you are using.",
+        f"The printing is expected to be completed at {end_time.strftime(r'%I:%M %p - %b %d')}. \n\nKindly specify which nozzle you are using.",
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard, one_time_keyboard=True, input_field_placeholder="Nozzle?"
          ),
@@ -107,9 +109,12 @@ async def nozzle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """shows status and goodbye"""
-    logger.info("Status is: %s", update.message.text)
+    status = ''
+    # if (datetime.datetime.now()>end_time): status = 'No printing is in progress at the moment.'
+    status = f"Current printing is expected to finish at {end_time.strftime(r'%I:%M %p - %b %d')}. And {nozzle_size} nozzle is in use"
+    logger.info(f"Status is being displayed. End time: {end_time}.")
     await update.message.reply_text(
-        "See you again"
+        f"{status} \n\nSee you again"
     )
     return ConversationHandler.END
 
