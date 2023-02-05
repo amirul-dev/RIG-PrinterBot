@@ -52,7 +52,7 @@ OPTION, START_TIME, DURATION, NOZZLE, NOZZLE, STATUS  = range(6)
 start_time = datetime.datetime.now()
 nozzle_size = 0.8
 
-option_keyboard = [["Add current printing data", "Check status of printer"]]
+option_keyboard = [["Update Print Info 🎨", "Check Printer Status 🔍"]]
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -60,11 +60,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     logger.info("Bot started, asking for option")
     user = update.message.from_user
     logger.info("Username: %s", user.first_name)
-    reply_keyboard = [["Add current printing data", "Check status of printer"]]
     await update.message.reply_text(
-        f"Welcome to RIG PrinterBot 1.0 🤖🎨 \n\nDo you need to add current printing details, or check printer status. \n\nChoose from the following.",
+        f"Welcome to RIG PrinterBot 1.0 🤖🎨\n\nAre you looking to update the current printing details, or check the status of the printer?\n\nPlease choose from the following options.",
         reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True, input_field_placeholder="Choose from below"
+            option_keyboard, one_time_keyboard=True, input_field_placeholder="Choose from below"
          ),     
     )
 
@@ -76,7 +75,8 @@ async def starttime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     start_time = datetime.datetime.now()
     logger.info("Start time: %s", start_time)
     await update.message.reply_text(
-        f'Printing start time have been recorded as: {start_time.strftime(r"%I:%M %p - %b %d")}. \n \nEnter the expected duration of printing in HH.MM format',
+        f"The printing start time has been logged as {start_time.strftime(r'%I:%M %p - %b %d')}. \n \nPlease enter the expected duration of the print in the format of hours.minutes",
+        reply_markup=ReplyKeyboardRemove()
     )
 
     return DURATION
@@ -89,7 +89,7 @@ async def duration(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     logger.info("Duration of printing: %s", print_duration)
     reply_keyboard = [["0.2", "0.3", "0.4", "0.8"]]
     await update.message.reply_text(
-        f"Printing is expected to finish at {finish_time.strftime(r'%I:%M %p - %b %d')}. \n\nWhich nozzle are you using",
+        f"The printing is expected to be completed at {finish_time.strftime(r'%I:%M %p - %b %d')}. \n\nKindly specify which nozzle you are using.",
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard, one_time_keyboard=True, input_field_placeholder="Nozzle?"
          ),
@@ -100,7 +100,8 @@ async def nozzle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """saves nozzle and goodbye"""
     logger.info("Nozzle is %s", update.message.text)
     await update.message.reply_text(
-        "Thanks for updating. \n\nHappy printing 🫶🏻"
+        "Thanks for updating. \n\nHappy printing 🫶🏻",
+        reply_markup= ReplyKeyboardRemove()
     )
     return ConversationHandler.END
 
@@ -118,7 +119,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
     logger.info("User %s canceled the conversation.", user.first_name)
     await update.message.reply_text(
-        "Bye! I hope we can talk again some day.", reply_markup=ReplyKeyboardRemove()
+        "Bye!", reply_markup=ReplyKeyboardRemove()
     )
 
     return ConversationHandler.END
@@ -131,17 +132,18 @@ def main() -> None:
 
     # Add conversation handler with the states GENDER, PHOTO, LOCATION and BIO
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler("start", start)],
+        entry_points=[CommandHandler("start", start), CommandHandler("update", starttime),CommandHandler("status", status)],
         states={
             OPTION: [MessageHandler(
                     filters.Regex(f"^({option_keyboard[0][0]})$"), starttime
                 ),
                 MessageHandler(filters.Regex(f"^({option_keyboard[0][1]})$"), status),
+                CommandHandler("update", starttime),CommandHandler("status", status)
             ],
             START_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, starttime)],
             DURATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, duration)],
             NOZZLE: [MessageHandler(filters.TEXT & ~filters.COMMAND, nozzle)],
-            STATUS: [MessageHandler(filters.TEXT & ~filters.COMMAND, status)],
+            STATUS: [MessageHandler(filters.TEXT & ~filters.COMMAND, status),],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
